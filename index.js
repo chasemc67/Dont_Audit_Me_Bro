@@ -55,9 +55,10 @@ var getPriceAtTime = function (transaction, callback, lastQuery=false) {
 
 function getPrices (transactions) {
     console.log("starting");
-
+    console.log(`Compiling data for ${transactions.length} transactions`)
     transactions.forEach((transaction, i, transactions) => {
         setTimeout(() => {
+            console.log(`Transaction: ${i+1}`);
             getPriceAtTime(transaction, (response, transaction, lastQuery=false) => {
                 Prices.push({
                     transaction,
@@ -79,8 +80,8 @@ function mapToCSV(Prices) {
         return ({
             txnIdHash: transaction.transaction.hash,
             date: transaction.transaction.timeStamp,
-            amountBought: (transaction.transaction.to === publicAddress) ? parseInt(value) : 0,
-            amountSold: (transaction.transaction.from === publicAddress) ? parseInt(value) : 0,
+            amountBought: (transaction.transaction.to === publicAddress) ? parseInt(transaction.transaction.value) : 0,
+            amountSold: (transaction.transaction.from === publicAddress) ? parseInt(transaction.transaction.value) : 0,
             priceInBtcAtTime: transaction.price.ETH.BTC,
             priceInUsdAtTime: transaction.price.ETH.USD,
             priceInCadAtTime: transaction.price.ETH.CAD
