@@ -48,7 +48,7 @@ var getPriceAtTime = function (transaction, callback, lastQuery=false) {
             body += data;
         });
         res.on("end", () => {
-            callback(body, transaction, lastQuery);
+            callback(JSON.parse(body), transaction, lastQuery);
         });
     });
 }
@@ -60,19 +60,33 @@ function getPrices (transactions) {
         setTimeout(() => {
             getPriceAtTime(transaction, (response, transaction, lastQuery=false) => {
                 Prices.push({
-                    timeStamp: transaction.timeStamp,
+                    transaction,
                     price: response
                 });
                 
-                console.log("Pushing for i = " + i);
                 if (lastQuery) {
-                    console.log(Prices);
+                    console.log(mapToCSV(Prices));
                 }
             }, i===transactions.length-1);
-        }, i*1000);
+        }, i*500);
     });
 }
  
+
+function mapToCSV(Prices) {
+    // Fields: txnHash, date, amountBought, amountSold, priceInBtc, priceInUsd, priceInCad
+    return Prices.map(transaction => {
+        return ({
+            txnIdHash: transaction.transaction.hash,
+            date: transaction.transaction.timeStamp,
+            amountBought: (transaction.transaction.to === publicAddress) ? parseInt(value) : 0,
+            amountSold: (transaction.transaction.from === publicAddress) ? parseInt(value) : 0,
+            priceInBtcAtTime: transaction.price.ETH.BTC,
+            priceInUsdAtTime: transaction.price.ETH.USD,
+            priceInCadAtTime: transaction.price.ETH.CAD
+        })
+    })
+}   
 
 var main = function (response) {
     const transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
