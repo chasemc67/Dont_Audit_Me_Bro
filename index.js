@@ -79,7 +79,7 @@ function mapToCSV(Prices) {
     return Prices.map(transaction => {
         return ({
             txnIdHash: transaction.transaction.hash,
-            date: transaction.transaction.timeStamp,
+            date: new Date(parseInt(transaction.transaction.timeStamp) * 1000).toString(),
             amountBought: (transaction.transaction.to === publicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
             amountSold: (transaction.transaction.from === publicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
             priceInBtcAtTime: transaction.price.ETH.BTC,
