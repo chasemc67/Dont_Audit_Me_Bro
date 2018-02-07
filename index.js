@@ -53,35 +53,28 @@ var getPriceAtTime = function (transaction, callback, lastQuery=false) {
     });
 }
 
-function* getPrices (transactions) {
+function getPrices (transactions) {
     console.log("starting");
-    for (var i=0; i<transactions.length; i++) {
-        getPriceAtTime(transactions[i], (response, transaction, lastQuery=false) => {
-            Prices.push({
-                timeStamp: transaction.timeStamp,
-                price: response
-            });
 
-            if (lastQuery) {
-                console.log(Prices);
-            }
-        }, i===transactions.length-1);
-        yield(sleep(1000));
-    }
+    transactions.forEach((transaction, i, transactions) => {
+        setTimeout(() => {
+            getPriceAtTime(transaction, (response, transaction, lastQuery=false) => {
+                Prices.push({
+                    timeStamp: transaction.timeStamp,
+                    price: response
+                });
+                
+                console.log("Pushing for i = " + i);
+                if (lastQuery) {
+                    console.log(Prices);
+                }
+            }, i===transactions.length-1);
+        }, i*1000);
+    });
 }
-
-
-var sleep = function(x) {
-    return function(cb) {
-       setTimeout(cb, x)
-    }
- }
  
 
 var main = function (response) {
     const transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
-    const iterator = getPrices(transactions);
-    for (var i = 0; i < transactions.length; i++) {
-        iterator.next();
-    }
+    getPrices(transactions);
 }
