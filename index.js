@@ -69,7 +69,7 @@ function getPrices (transactions) {
                     console.log(mapToCSV(Prices));
                 }
             }, i===transactions.length-1);
-        }, i*500);
+        }, i*100);
     });
 }
  
@@ -80,8 +80,8 @@ function mapToCSV(Prices) {
         return ({
             txnIdHash: transaction.transaction.hash,
             date: transaction.transaction.timeStamp,
-            amountBought: (transaction.transaction.to === publicAddress) ? parseInt(transaction.transaction.value) : 0,
-            amountSold: (transaction.transaction.from === publicAddress) ? parseInt(transaction.transaction.value) : 0,
+            amountBought: (transaction.transaction.to === publicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
+            amountSold: (transaction.transaction.from === publicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
             priceInBtcAtTime: transaction.price.ETH.BTC,
             priceInUsdAtTime: transaction.price.ETH.USD,
             priceInCadAtTime: transaction.price.ETH.CAD
