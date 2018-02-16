@@ -16,11 +16,6 @@ function getEthUrlForAddr(addr) {
 }
 
 function getBtcUrlForAddr(addr) {
-    // this might be a better api
-    // https://www.blockcypher.com/dev/bitcoin/#address-endpoint
-    // https://api.blockcypher.com/v1/btc/main/addrs/1L4qX3unLPnqyin5qLj2EN1e5kJBAZ6R9B
-    // but it doesn't support bch, so we should try to make that work.
-
     return `https://api.blockchair.com/bitcoin/dashboards/address/${addr}`;
 }
 
