@@ -5,6 +5,9 @@ const btcPubKeys = require("./btcPubKeys").btcPubKeys;
 const bchPubKeys = require("./bchPubKeys").bchPubKeys;
 const ethPubKeys = require("./ethPubKeys").ethPubKeys;
 
+const ethValueMultiplier = .000000000000000001; // api gives us trillions of an eth or whatever
+var gasPriceMultiplier = .00000001;
+
 function getEthUrlForAddr(addr) {
     const ethApiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT"; 
     return `https://api.etherscan.io/api?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&ethApikey=${ethApiKey}`;
@@ -43,22 +46,23 @@ function getDataFromApi(url, callback) {
 }
 
 
-var calculateBalanceFromTransactions = function(transactionsArray, ethPublicAddress) {
+var calculateBalanceFromTransactions = function(transactionsArray) {
     var currentBalance = 0;
     var transaction;
     var gasUsedxPrice = 0;
     for (var i=0; i < transactionsArray.length; i++) {
         transaction = transactionsArray[i];
         if (transaction.isError === "0"){
-            if(transaction.to === ethPublicAddress) {
+            gasUsedxPrice += parseInt(transaction.gasUsed) + parseInt(transaction.gasPrice)*ethValueMultiplier;
+            if(transaction.to === transaction.pubKey) {
                 currentBalance += parseInt(transaction.value);
-            } else if (transaction.from === ethPublicAddress) {
+            } else if (transaction.from === transaction.pubKey) {
                 currentBalance -= parseInt(transaction.value);
             }
         }
     }
 
-    return (currentBalance - gasUsedxPrice);
+    console.log(`Eth balance: ${currentBalance*ethValueMultiplier - gasUsedxPrice*gasPriceMultiplier}`);
 }
 
 
@@ -103,18 +107,13 @@ function mapToCSV(Prices) {
         return ({
             txnIdHash: transaction.transaction.hash,
             date: new Date(parseInt(transaction.transaction.timeStamp) * 1000).toString(),
-            amountBought: (transaction.transaction.to === transaction.transaction.pubKey) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
-            amountSold: (transaction.transaction.from === transaction.transaction.pubKey) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
+            amountBought: (transaction.transaction.to === transaction.transaction.pubKey) ? parseInt(transaction.transaction.value) * ethValueMultiplier : 0,
+            amountSold: (transaction.transaction.from === transaction.transaction.pubKey) ? parseInt(transaction.transaction.value) * ethValueMultiplier : 0,
             priceInBtcAtTime: transaction.price.ETH.BTC,
             priceInUsdAtTime: transaction.price.ETH.USD,
             priceInCadAtTime: transaction.price.ETH.CAD
         })
     })
-}
-
-var main = function (response) {
-    const transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
-    getPrices(transactions);
 }
 
 //Eth
@@ -129,7 +128,8 @@ ethPubKeys.forEach((key, i, keys) => {
             });
             ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
             if (i === keys.length-1) {
-                getPrices(ethereumTransactions);        
+                //getPrices(ethereumTransactions);        
+                calculateBalanceFromTransactions(ethereumTransactions);        
             }
         }).catch(error => {
             console.log("Something broke");
@@ -137,3 +137,15 @@ ethPubKeys.forEach((key, i, keys) => {
         });
     }, i * 200);
 });
+
+
+// const key = ethPubKeys[5]
+// getDataFromApi(getEthUrlForAddr(key)).then(response => {
+//     let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
+//     transactions = transactions.map(transaction => {
+//         transaction.pubKey = key;
+//         return transaction;
+//     });
+//     ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+//     calculateBalanceFromTransactions(ethereumTransactions);        
+// });
