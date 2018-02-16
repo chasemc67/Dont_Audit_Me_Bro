@@ -1,23 +1,38 @@
 //https://www.cryptocompare.com/api/#-api-data-histominute-
 
 const https = require("https");
+import { bchPubKeys } from "./bchPubKeys";
+import { ethPubKeys } from "./ethPubKeys";
+import { btcPubKeys } from "./btcPubKeys";
 
-const apiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT";
-const publicAddress = "0x5e8e44fe4564349925a184ef81c6459aacba2cf7";
-const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${publicAddress}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+function getEthUrlForAddr(addr) {
+    const ethApiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT"; 
+    return `https://api.etherscan.io/api?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&ethApikey=${ethApiKey}`;
+}
+
+function getBtcUrlForAddr(addr) {
+    return `https://api.blockchair.com/bitcoin/dashboards/address/${addr}`;
+}
+
+function getBchUrlForAddr(addr) {
+    return `https://api.blockchair.com/bitcoin-cash/dashboards/address/${addr}`;
+}
+
 
 var Prices = [];
   
-https.get(url, res => {
-  res.setEncoding("utf8");
-  let body = "";
-  res.on("data", data => {
-    body += data;
-  });
-  res.on("end", () => {
-    main(JSON.parse(body));
-  });
-});
+function getDataForUrl(url, callback) {
+    https.get(url, res => {
+        res.setEncoding("utf8");
+        let body = "";
+        res.on("data", data => {
+            body += data;
+        });
+        res.on("end", () => {
+            callback(JSON.parse(body));
+        });
+    });
+}
 
 
 var calculateBalanceFromTransactions = function(transactionsArray) {
@@ -27,9 +42,9 @@ var calculateBalanceFromTransactions = function(transactionsArray) {
     for (var i=0; i < transactionsArray.length; i++) {
         transaction = transactionsArray[i];
         if (transaction.isError === "0"){
-            if(transaction.to === publicAddress) {
+            if(transaction.to === ethPublicAddress) {
                 currentBalance += parseInt(transaction.value);
-            } else if (transaction.from === publicAddress) {
+            } else if (transaction.from === ethPublicAddress) {
                 currentBalance -= parseInt(transaction.value);
             }
         }
@@ -80,16 +95,18 @@ function mapToCSV(Prices) {
         return ({
             txnIdHash: transaction.transaction.hash,
             date: new Date(parseInt(transaction.transaction.timeStamp) * 1000).toString(),
-            amountBought: (transaction.transaction.to === publicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
-            amountSold: (transaction.transaction.from === publicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
+            amountBought: (transaction.transaction.to === ethPublicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
+            amountSold: (transaction.transaction.from === ethPublicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
             priceInBtcAtTime: transaction.price.ETH.BTC,
             priceInUsdAtTime: transaction.price.ETH.USD,
             priceInCadAtTime: transaction.price.ETH.CAD
         })
     })
-}   
+}
 
 var main = function (response) {
     const transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
     getPrices(transactions);
 }
+
+getDataForUrl(getEthUrlForAddr(ethPubKeys[0]), main);
