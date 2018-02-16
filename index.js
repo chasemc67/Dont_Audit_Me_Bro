@@ -6,7 +6,9 @@ const bchPubKeys = require("./bchPubKeys").bchPubKeys;
 const ethPubKeys = require("./ethPubKeys").ethPubKeys;
 
 const ethValueMultiplier = .000000000000000001; // api gives us trillions of an eth or whatever
-var gasPriceMultiplier = .00000001;
+const gasPriceMultiplier = .00000001;
+
+const btcValueMultiplier = .00000001;
 
 function getEthUrlForAddr(addr) {
     const ethApiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT"; 
@@ -14,6 +16,11 @@ function getEthUrlForAddr(addr) {
 }
 
 function getBtcUrlForAddr(addr) {
+    // this might be a better api
+    // https://www.blockcypher.com/dev/bitcoin/#address-endpoint
+    // https://api.blockcypher.com/v1/btc/main/addrs/1L4qX3unLPnqyin5qLj2EN1e5kJBAZ6R9B
+    // but it doesn't support bch, so we should try to make that work.
+
     return `https://api.blockchair.com/bitcoin/dashboards/address/${addr}`;
 }
 
@@ -99,6 +106,30 @@ function getPrices (transactions) {
         }, i*100);
     });
 }
+
+function mapBlockChairApiToNormalTransaction(transactions) {
+    transactions.map(transaction => {
+        // each transaction needs to generated two transactions. a buy and a sell
+        if (transaction.sum_value_unspent === "0") {
+            return ([{
+                amountBought: parseInt(transaction.sum_value),
+                dateInUnix: new Date(xtransaction.max_time_receiving).getTime() / 1000,
+                amountSold: 0
+            }, {
+                amountSold: parseInt(transaction.sum_value),
+                dateInUnix:  new Date(transaction.max_time_spending).getTime() / 1000,
+                amountBought: 0
+            }]);
+        } else {
+            return ([{
+                amountBought: parseInt(transaction.sum_value),
+                dateInUnix: new Date(transaction.max_time_receiving).getTime() / 1000,
+                amountSold: 0
+            }]);
+        }
+        
+    });
+}
  
 
 function mapToCSV(Prices) {
@@ -117,19 +148,40 @@ function mapToCSV(Prices) {
 }
 
 //Eth
-var ethereumTransactions = []
-ethPubKeys.forEach((key, i, keys) => {
+// var ethTxns = []
+// ethPubKeys.forEach((key, i, keys) => {
+//     setTimeout(() => {
+//         getDataFromApi(getEthUrlForAddr(key)).then(response => {
+//             let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
+//             transactions = transactions.map(transaction => {
+//                 transaction.pubKey = keys[i];
+//                 return transaction;
+//             });
+//             ethTxns = ethTxns.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+//             if (i === keys.length-1) {
+//                 getPrices(ethTxns);        
+//                 //calculateBalanceFromTransactions(ethTxns);        
+//             }
+//         }).catch(error => {
+//             console.log("Something broke");
+//             return;
+//         });
+//     }, i * 200);
+// });
+
+var btcTxns = []
+btcPubKeys.forEach((key, i, keys) => {
     setTimeout(() => {
-        getDataFromApi(getEthUrlForAddr(key)).then(response => {
+        getDataFromApi(getBtcUrlForAddr(key)).then(response => {
             let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
             transactions = transactions.map(transaction => {
                 transaction.pubKey = keys[i];
                 return transaction;
             });
-            ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+            btcTxns = btcTxns.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
             if (i === keys.length-1) {
-                getPrices(ethereumTransactions);        
-                //calculateBalanceFromTransactions(ethereumTransactions);        
+                getPrices(btcTxns);        
+                //calculateBalanceFromTransactions(btcTxns);        
             }
         }).catch(error => {
             console.log("Something broke");
