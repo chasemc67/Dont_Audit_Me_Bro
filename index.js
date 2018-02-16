@@ -117,35 +117,35 @@ function mapToCSV(Prices) {
 }
 
 //Eth
-var ethereumTransactions = []
-ethPubKeys.forEach((key, i, keys) => {
-    setTimeout(() => {
-        getDataFromApi(getEthUrlForAddr(key)).then(response => {
-            let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
-            transactions = transactions.map(transaction => {
-                transaction.pubKey = keys[i];
-                return transaction;
-            });
-            ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
-            if (i === keys.length-1) {
-                //getPrices(ethereumTransactions);        
-                calculateBalanceFromTransactions(ethereumTransactions);        
-            }
-        }).catch(error => {
-            console.log("Something broke");
-            return;
-        });
-    }, i * 200);
-});
-
-
-// const key = ethPubKeys[5]
-// getDataFromApi(getEthUrlForAddr(key)).then(response => {
-//     let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
-//     transactions = transactions.map(transaction => {
-//         transaction.pubKey = key;
-//         return transaction;
-//     });
-//     ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
-//     calculateBalanceFromTransactions(ethereumTransactions);        
+// var ethereumTransactions = []
+// ethPubKeys.forEach((key, i, keys) => {
+//     setTimeout(() => {
+//         getDataFromApi(getEthUrlForAddr(key)).then(response => {
+//             let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
+//             transactions = transactions.map(transaction => {
+//                 transaction.pubKey = keys[i];
+//                 return transaction;
+//             });
+//             ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+//             if (i === keys.length-1) {
+//                 //getPrices(ethereumTransactions);        
+//                 calculateBalanceFromTransactions(ethereumTransactions);        
+//             }
+//         }).catch(error => {
+//             console.log("Something broke");
+//             return;
+//         });
+//     }, i * 200);
 // });
+
+
+const key = ethPubKeys[5]
+getDataFromApi(getEthUrlForAddr(key)).then(response => {
+    let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
+    transactions = transactions.map(transaction => {
+        transaction.pubKey = key;
+        return transaction;
+    });
+    ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+    calculateBalanceFromTransactions(ethereumTransactions);        
+});
