@@ -1,9 +1,9 @@
 //https://www.cryptocompare.com/api/#-api-data-histominute-
 
 const https = require("https");
-import { bchPubKeys } from "./bchPubKeys";
-import { ethPubKeys } from "./ethPubKeys";
-import { btcPubKeys } from "./btcPubKeys";
+const btcPubKeys = require("./btcPubKeys").btcPubKeys;
+const bchPubKeys = require("./bchPubKeys").bchPubKeys;
+const ethPubKeys = require("./ethPubKeys").ethPubKeys;
 
 function getEthUrlForAddr(addr) {
     const ethApiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT"; 
@@ -21,21 +21,29 @@ function getBchUrlForAddr(addr) {
 
 var Prices = [];
   
-function getDataForUrl(url, callback) {
-    https.get(url, res => {
-        res.setEncoding("utf8");
-        let body = "";
-        res.on("data", data => {
-            body += data;
-        });
-        res.on("end", () => {
-            callback(JSON.parse(body));
-        });
-    });
+function getDataFromApi(url, callback) {
+    return new Promise(
+        function (resolve, reject) {
+            https.get(url, res => {
+                res.setEncoding("utf8");
+                let body = "";
+                res.on("data", data => {
+                    body += data;
+                });
+                res.on("end", () => {
+                    if (body.startsWith("<")) {
+                        throw Error;
+                        reject("Fail! Exceeded request limit");
+                    }
+                    resolve(JSON.parse(body));
+                });
+            });
+        }
+    );   
 }
 
 
-var calculateBalanceFromTransactions = function(transactionsArray) {
+var calculateBalanceFromTransactions = function(transactionsArray, ethPublicAddress) {
     var currentBalance = 0;
     var transaction;
     var gasUsedxPrice = 0;
@@ -109,4 +117,18 @@ var main = function (response) {
     getPrices(transactions);
 }
 
-getDataForUrl(getEthUrlForAddr(ethPubKeys[0]), main);
+//Eth
+var ethereumTransactions = []
+ethPubKeys.forEach((key, i, keys) => {
+    setTimeout(() => {
+        getDataFromApi(getEthUrlForAddr(key)).then(response => {
+            ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+            if (i === keys.length-1) {
+                getPrices(ethereumTransactions);        
+            }
+        }).catch(error => {
+            console.log("Something broke");
+            return;
+        });
+    }, i * 200);
+});
