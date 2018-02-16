@@ -103,8 +103,8 @@ function mapToCSV(Prices) {
         return ({
             txnIdHash: transaction.transaction.hash,
             date: new Date(parseInt(transaction.transaction.timeStamp) * 1000).toString(),
-            amountBought: (transaction.transaction.to === ethPublicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
-            amountSold: (transaction.transaction.from === ethPublicAddress) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
+            amountBought: (transaction.transaction.to === transaction.transaction.pubKey) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
+            amountSold: (transaction.transaction.from === transaction.transaction.pubKey) ? parseInt(transaction.transaction.value) * .000000000000000001 : 0,
             priceInBtcAtTime: transaction.price.ETH.BTC,
             priceInUsdAtTime: transaction.price.ETH.USD,
             priceInCadAtTime: transaction.price.ETH.CAD
@@ -122,6 +122,11 @@ var ethereumTransactions = []
 ethPubKeys.forEach((key, i, keys) => {
     setTimeout(() => {
         getDataFromApi(getEthUrlForAddr(key)).then(response => {
+            let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
+            transactions = transactions.map(transaction => {
+                transaction.pubKey = keys[i];
+                return transaction;
+            });
             ethereumTransactions = ethereumTransactions.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
             if (i === keys.length-1) {
                 getPrices(ethereumTransactions);        
