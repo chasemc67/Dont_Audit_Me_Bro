@@ -1,4 +1,10 @@
+![alt text](https://github.com/chasemc67/DontAuditMeBro/blob/master/assets/readme.gif "sample")
 
+
+## creates trade information from public address for tax purposes
+
+
+## to use:
 Create 3 files in the local directory (siblings of index.js) called:
 btcPubKeys.js
 bchPubKeys.js
@@ -9,6 +15,8 @@ exports.btcPubKeys = ["1L4qX3rnLPnqyin5qNj2EN1e5kJBAZ6R9B", "1L4qX3bnLPnqyin5qNj
 
 where the variable is an array of your public keys.
 
-run with:
-node index.js | tee prices.txt
+
+
+## run with:
+node index.js btc
 
