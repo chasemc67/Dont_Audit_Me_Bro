@@ -168,12 +168,13 @@ var btcTxns = []
 btcPubKeys.forEach((key, i, keys) => {
     setTimeout(() => {
         getDataFromApi(getBtcUrlForAddr(key)).then(response => {
-            let transactions = response.result.filter((transaction) => {return transaction.isError === "0"});
+            // Find transaction fail flag for btc/bch
+            let transactions = response.result.filter((transaction) => {return (transaction.isError !== undefined ? transaction.isError === "0": true)});
             transactions = transactions.map(transaction => {
                 transaction.pubKey = keys[i];
                 return transaction;
             });
-            btcTxns = btcTxns.concat(response.result.filter((transaction) => {return transaction.isError === "0"}));    
+            btcTxns = btcTxns.concat(transactions);    
             if (i === keys.length-1) {
                 getPrices(btcTxns);        
                 //calculateBalanceFromTransactions(btcTxns);        
