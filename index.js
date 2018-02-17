@@ -84,7 +84,7 @@ var getPriceAtTime = function (transaction, callback, lastQuery=false) {
 
 function getPrices (transactions) {
     console.log("starting");
-    console.log(`Compiling data for ${transactions.length} transactions`)
+    console.log(`Compiling data for ${transactions.length} transactions`);
     transactions.forEach((transaction, i, transactions) => {
         setTimeout(() => {
             console.log(`Transaction: ${i+1}`);
@@ -102,23 +102,27 @@ function getPrices (transactions) {
     });
 }
 
-function mapBlockChairApiToNormalTransaction(transactions) {
+function mapBlockChairApiToNormalTransaction(transaction, data) {
+    let mappedTxn = {};
+
+    mappedTxn.pubKey = data;
+
     transactions.map(transaction => {
         // each transaction needs to generated two transactions. a buy and a sell
         if (transaction.sum_value_unspent === "0") {
             return ([{
                 amountBought: parseInt(transaction.sum_value),
-                dateInUnix: new Date(xtransaction.max_time_receiving).getTime() / 1000,
+                timeStamp: new Date(xtransaction.max_time_receiving).getTime() / 1000,
                 amountSold: 0
             }, {
                 amountSold: parseInt(transaction.sum_value),
-                dateInUnix:  new Date(transaction.max_time_spending).getTime() / 1000,
+                timeStamp:  new Date(transaction.max_time_spending).getTime() / 1000,
                 amountBought: 0
             }]);
         } else {
             return ([{
                 amountBought: parseInt(transaction.sum_value),
-                dateInUnix: new Date(transaction.max_time_receiving).getTime() / 1000,
+                timeStamp: new Date(transaction.max_time_receiving).getTime() / 1000,
                 amountSold: 0
             }]);
         }
@@ -127,7 +131,7 @@ function mapBlockChairApiToNormalTransaction(transactions) {
 }
  
 
-function mapToCSV(Prices) {
+function mapEthToCSV(Prices) {
     // Fields: txnHash, date, amountBought, amountSold, priceInBtc, priceInUsd, priceInCad
     return Prices.map(transaction => {
         return ({
@@ -169,11 +173,9 @@ btcPubKeys.forEach((key, i, keys) => {
     setTimeout(() => {
         getDataFromApi(getBtcUrlForAddr(key)).then(response => {
             // Find transaction fail flag for btc/bch
-            let transactions = response.result.filter((transaction) => {return (transaction.isError !== undefined ? transaction.isError === "0": true)});
-            transactions = transactions.map(transaction => {
-                transaction.pubKey = keys[i];
-                return transaction;
-            });
+            let addrData = response.data[0];
+            let btcTxns = [];
+            btcTxns.concat(mapBlockChairApiToNormalTransaction(addrData, {pubKey: keys[i]}));
             btcTxns = btcTxns.concat(transactions);    
             if (i === keys.length-1) {
                 getPrices(btcTxns);        
