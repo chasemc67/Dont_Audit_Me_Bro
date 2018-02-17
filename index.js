@@ -6,7 +6,6 @@ const ethPubKeys = require("./ethPubKeys").ethPubKeys;
 
 const ethValueMultiplier = .000000000000000001; // api gives us trillions of an eth or whatever
 const gasPriceMultiplier = .00000001;
-
 const btcValueMultiplier = .00000001;
 
 const exchangeCurrencies = ["BTC", "USD", "CAD"]; // there isn't support for changing this array yet when reading from api response;
@@ -20,7 +19,7 @@ if (process.argv[2]) {
 }
 
 function getEthUrlForAddr(addr) {
-    const ethApiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT"; 
+    const ethApiKey = "5WU911P6VS8P4472M52Q1IGYGD2BS385HT";
     return `https://api.etherscan.io/api?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&ethApikey=${ethApiKey}`;
 }
 
@@ -211,9 +210,22 @@ function getFinalizedTransactions (chain) {
 
 
 function main() {
+    displayTitle();
     getFinalizedTransactions(chain).then(finalizedTxns => {
         console.log(finalizedTxns);
     });
+}
+
+
+function displayTitle() {
+    console.log(`
+        _  _   _ ___ ___ _____   _____   ___   ___  ___ ___ 
+       /_\\| | | |   \\_ _|_   _| | __\\ \\ / /_\\ |   \\| __| _ \\
+      / _ \\ |_| | |) | |  | |   | _| \\ V / _ \\| |) | _||   /
+     /_/ \\_\\___/|___/___| |_|   |___| \\_/_/ \\_\\___/|___|_|_\\                                                   
+    `);
+    console.log("Donnie boy won't know what hit 'im");
+    console.log("\n\n\n");
 }
 
 main();
