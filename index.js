@@ -102,32 +102,49 @@ function getPrices (transactions) {
     });
 }
 
-function mapBlockChairApiToNormalTransaction(transaction, data) {
-    let mappedTxn = {};
-
-    mappedTxn.pubKey = data;
-
-    transactions.map(transaction => {
-        // each transaction needs to generated two transactions. a buy and a sell
-        if (transaction.sum_value_unspent === "0") {
-            return ([{
-                amountBought: parseInt(transaction.sum_value),
-                timeStamp: new Date(xtransaction.max_time_receiving).getTime() / 1000,
-                amountSold: 0
-            }, {
-                amountSold: parseInt(transaction.sum_value),
-                timeStamp:  new Date(transaction.max_time_spending).getTime() / 1000,
-                amountBought: 0
-            }]);
-        } else {
-            return ([{
-                amountBought: parseInt(transaction.sum_value),
-                timeStamp: new Date(transaction.max_time_receiving).getTime() / 1000,
-                amountSold: 0
-            }]);
+function getPricedTransactions (transactions) {
+    return new Promise(
+        function (resolve, reject) {
+            console.log("starting");
+            console.log(`Compiling data for ${transactions.length} transactions`);
+            let pricedTransactions = [];
+            transactions.forEach((transaction, i, transactions) => {
+                setTimeout(() => {
+                    console.log(`Transaction: ${i+1}`);
+                    getPriceAtTime(transaction, (response, transaction, lastQuery=false) => {
+                        pricedTransactions.push(Object.assign({}, transaction, {price: response}));
+                        if (lastQuery) {
+                            resolve(pricedTransactions);
+                        }
+                    }, i===transactions.length-1);
+                }, i*100);
+            });
         }
-        
-    });
+    );
+}
+
+function mapBlockChairApiToNormalTransaction(transaction, data) {
+    // each transaction needs to generated two transactions. a buy and a sell
+    if (transaction.sum_value_unspent === "0") {
+        return ([{
+            amountBought: parseInt(transaction.sum_value),
+            timeStamp: new Date(xtransaction.max_time_receiving).getTime() / 1000,
+            amountSold: 0,
+            pubKey: data.pubKey
+        }, {
+            amountSold: parseInt(transaction.sum_value),
+            timeStamp:  new Date(transaction.max_time_spending).getTime() / 1000,
+            amountBought: 0,
+            pubKey: data.pubKey
+        }]);
+    } else {
+        return ([{
+            amountBought: parseInt(transaction.sum_value),
+            timeStamp: new Date(transaction.max_time_receiving).getTime() / 1000,
+            amountSold: 0,
+            pubKey: data.pubKey
+        }]);
+    }
 }
  
 
@@ -174,12 +191,11 @@ btcPubKeys.forEach((key, i, keys) => {
         getDataFromApi(getBtcUrlForAddr(key)).then(response => {
             // Find transaction fail flag for btc/bch
             let addrData = response.data[0];
-            let btcTxns = [];
-            btcTxns.concat(mapBlockChairApiToNormalTransaction(addrData, {pubKey: keys[i]}));
-            btcTxns = btcTxns.concat(transactions);    
+            btcTxns = btcTxns.concat(mapBlockChairApiToNormalTransaction(addrData, {pubKey: keys[i]}));
             if (i === keys.length-1) {
-                getPrices(btcTxns);        
-                //calculateBalanceFromTransactions(btcTxns);        
+                getPricedTransactions(btcTxns).then(response => {
+                    console.log(response);
+                });        
             }
         }).catch(error => {
             console.log("Something broke");
