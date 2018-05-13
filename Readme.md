@@ -16,7 +16,9 @@ bchPubKeys.js
 ethPubKeys.js
 
 each file should look like this:  
-`exports.btcPubKeys = ["1L4qX3rnLPnqyin5qNj2EN1e5kJBAZ6R9B", "1L4qX3bnLPnqyin5qNj2EN1e5kJBAZ6R9B"]`   
+```
+exports.btcPubKeys = ["1L4qX3rnLPnqyin5qNj2EN1e5kJBAZ6R9B", "1L4qX3bnLPnqyin5qNj2EN1e5kJBAZ6R9B"]
+``` 
 where the variable is an array of your public keys.  
   
 a sample can be found [here](https://github.com/chasemc67/DontAuditMeBro/blob/master/samplePubKeys.js) 
@@ -28,10 +30,11 @@ node index.js btc
 
 
 #### Output:
-`[  
-    {   
-        amountBought: 0.05735622,   
-        timeStamp: 1500129909,   
+```
+[
+    {
+        amountBought: 0.05735622,
+        timeStamp: 1500129909,
         date: '2017-07-15 07:45:09',   
         amountSold: 0,   
         pubKey: '1L4qX3unLPnqyin5qLj2EN1e5kJBAZ6R9B',   
@@ -48,6 +51,7 @@ node index.js btc
         priceOfUsdAtTime: 17523.7,   
         priceOfCadAtTime: 22467.94    
     }   
-]`   
+]
+```  
 
 Output is an array of buy or sell events. Along with each event is the price of the coin at that time, in USD, BTC, and CAD. 
