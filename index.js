@@ -15,7 +15,7 @@ var chain;
 if (process.argv[2]) {
     chain = (process.argv[2].toUpperCase());
 } else {
-    chain = "BTC";
+    chain = "ETH";
 }
 
 function getEthUrlForAddr(addr) {
@@ -73,11 +73,15 @@ function mapBlockChairApiResponseToTransactions(apiResponse, data) {
     // each transaction needs to generated two apiResponses. a buy and a sell
     
     // TODO the bought/sold logic here is probably wrong
+    let valueMultiplier;
+    if (chain === "BTC") {
+        valueMultiplier = btcValueMultiplier;
+    }
 
     let apiData = apiResponse.data[0];
     let transactions = [];
     transactions = transactions.concat({
-        amountBought: parseInt(apiData.sum_value),
+        amountBought: parseInt(apiData.sum_value) * valueMultiplier,
         timeStamp: new Date(apiData.max_time_receiving).getTime() / 1000,
         date: apiData.max_time_receiving,
         amountSold: 0,
@@ -87,7 +91,7 @@ function mapBlockChairApiResponseToTransactions(apiResponse, data) {
 
     if (apiData.sum_value_unspent === "0") {
         transactions = transactions.concat({
-            amountSold: parseInt(apiData.sum_value),
+            amountSold: parseInt(apiData.sum_value) * valueMultiplier,
             timeStamp:  new Date(apiData.max_time_spending).getTime() / 1000,
             date: apiData.max_time_spending,
             amountBought: 0,
@@ -99,13 +103,19 @@ function mapBlockChairApiResponseToTransactions(apiResponse, data) {
 }
 
 function mapEthApiResponseToTransactions(response, data) {
-    return({
-        txnIdHash: response.transaction.hash,
-        date: new Date(parseInt(response.transaction.timeStamp) * 1000).toString(),
-        timeStamp: response.transaction.timeStamp,
-        amountBought: (response.transaction.to === response.transaction.pubKey) ? parseInt(response.transaction.value) * ethValueMultiplier : 0,
-        amountSold: (response.transaction.from === response.transaction.pubKey) ? parseInt(response.transaction.value) * ethValueMultiplier : 0
-    })
+    let responseTransactionsArray = []
+    response.result.forEach(txn => {
+        responseTransactionsArray = responseTransactionsArray.concat({
+            pubKey: data.pubKey,
+            txnIdHash: txn.hash,
+            date: new Date(parseInt(txn.timeStamp) * 1000).toString(),
+            timeStamp: txn.timeStamp,
+            amountBought: (txn.to === txn.pubKey) ? parseInt(txn.value) * ethValueMultiplier : 0,
+            amountSold: (txn.from === txn.pubKey) ? parseInt(txn.value) * ethValueMultiplier : 0
+        });
+    });
+
+    return responseTransactionsArray;
 }
 
 
@@ -137,15 +147,15 @@ function getPricedTransactions (transactions) {
         pricedTransactions = [];
         transactions.forEach((transaction, i, transactions) => {
             setTimeout(() => {
-                console.log(`Getting prices for pubKey: ${transactions[i]}, [${i+1}/${transactions.length}]`);
+                console.log(`Getting prices for pubKey: ${transactions[i].pubKey}, [${i+1}/${transactions.length}]`);
                 getPriceAtTime(chain, exchangeCurrencies, transaction.timeStamp).then(priceData => {
                     pricedTransactions.push(
                         Object.assign({}, 
                             transaction, 
                             {
-                                priceInBtcAtTime: priceData[Object.keys(priceData)[0]].BTC,
-                                priceInUsdAtTime: priceData[Object.keys(priceData)[0]].USD,
-                                priceInCadAtTime: priceData[Object.keys(priceData)[0]].CAD
+                                priceOfBtcAtTime: priceData[Object.keys(priceData)[0]].BTC,
+                                priceOfUsdAtTime: priceData[Object.keys(priceData)[0]].USD,
+                                priceOfCadAtTime: priceData[Object.keys(priceData)[0]].CAD
                             }
                         )
                     );
@@ -153,7 +163,7 @@ function getPricedTransactions (transactions) {
                 if (i === transactions.length-1) {
                     resolve(pricedTransactions);
                 }
-            }, i*100);
+            }, i*300);
         });
     });
 }
@@ -196,7 +206,9 @@ function getFinalizedTransactions (chain) {
                     finalTxns = finalTxns.concat(mapApiToTxns(apiResponse, {pubKey: keys[i]}));
                     if (i === keys.length-1) {
                         getPricedTransactions(finalTxns).then(pricedTxns => {
-                            resolve(pricedTxns);
+                            resolve(pricedTxns.sort((txnA, txnB) => {
+                                return (txnA - txnB);
+                            }));
                         });        
                     }
                 }).catch(error => {
