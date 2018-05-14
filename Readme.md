@@ -54,4 +54,4 @@ node index.js btc
 ]
 ```  
 
-Output is an array of buy or sell events. Along with each event is the price of the coin at that time, in USD, BTC, and CAD. 
+Output is an array of buy or sell events. Along with each event is the price of the coin at that time, in USD, BTC, and CAD.  
